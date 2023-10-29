@@ -220,9 +220,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		Timer += 1;						// 10x microseconds
 		DiplayUpdate(Timer);
 	}
-	if (htim->Instance == TIM3) {
-		nopdelay(1);
-	}
 	if (htim->Instance == TIM4) {		// Debounce timer
 		if (DebounceStart[0]) {
 			if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == (GPIO_PIN_RESET)) {	    // button not pressed
