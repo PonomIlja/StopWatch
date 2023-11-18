@@ -31,6 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -43,9 +44,9 @@ TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim4;
 
 /* USER CODE BEGIN PV */
-const uint8_t _tm1637_digits[10] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f};
-const uint8_t _tm1637_all_zero[6] = {0x3f, 0xBf, 0x3f, 0x3f};
-const uint8_t _tm1637_dot = 0x80;
+const uint8_t tm1637_digits[10] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f};
+const uint8_t tm1637_all_zero[TM1637_SYMBOLS] = {0x3f, 0xBf, 0x3f, 0x3f};
+const uint8_t tm1637_dot = 0x80;
 
 tm1637_t D_left, D_right;
 
@@ -89,7 +90,6 @@ void tm1637_stop(tm1637_t *tm1637)
 
 uint8_t tm1637_write_byte(tm1637_t *tm1637, uint8_t data)
 {
-  //  write 8 bit data
   for (uint8_t i = 0; i < 8; i++)
   {
     HAL_GPIO_WritePin(tm1637->gpio_clk, tm1637->pin_clk, GPIO_PIN_RESET);
@@ -101,7 +101,7 @@ uint8_t tm1637_write_byte(tm1637_t *tm1637, uint8_t data)
     nopdelay(TM1637_DELAY);
     data = data >> 1;
   }
-  // wait for acknowledge
+
   HAL_GPIO_WritePin(tm1637->gpio_clk, tm1637->pin_clk, GPIO_PIN_RESET);
   nopdelay(TM1637_DELAY);
   HAL_GPIO_WritePin(tm1637->gpio_dio, tm1637->pin_dio, GPIO_PIN_SET);
@@ -121,22 +121,22 @@ void tm1637_brightness(tm1637_t *tm1637, uint8_t bright)    // from 0 to 7
 
 void tm1637_write(tm1637_t *tm1637, const uint8_t *raw, uint8_t length, uint8_t pos)
 {
-  if (pos > 5)
+  if (pos > TM1637_SYMBOLS-1)
     return;
-  if (length > 4)
-    length = 4;
-  // write COMM1
+  if (length > TM1637_SYMBOLS)
+    length = TM1637_SYMBOLS;
+
   tm1637_start(tm1637);
   tm1637_write_byte(tm1637, TM1637_COMM1);
   tm1637_stop(tm1637);
-  // write COMM2 + first digit address
+
   tm1637_start(tm1637);
   tm1637_write_byte(tm1637, TM1637_COMM2 + (pos & 0x03));
-  // write the data bytes
+
   for (uint8_t k=0; k < length; k++)
     tm1637_write_byte(tm1637, raw[k]);
   tm1637_stop(tm1637);
-  // write COMM3 + brightness
+
   tm1637_start(tm1637);
   tm1637_write_byte(tm1637, TM1637_COMM3 + tm1637->brightness);
   tm1637_stop(tm1637);
@@ -144,36 +144,36 @@ void tm1637_write(tm1637_t *tm1637, const uint8_t *raw, uint8_t length, uint8_t 
 
 void tm1637_init(tm1637_t *tm1637, GPIO_TypeDef *gpio_clk, uint16_t pin_clk, GPIO_TypeDef *gpio_dio, uint16_t pin_dio)
 {
-  tm1637_brightness(tm1637, 2);
+  tm1637_brightness(tm1637, TM1637_BR_MED);
   tm1637->gpio_clk = gpio_clk;
   tm1637->pin_clk = pin_clk;
   tm1637->gpio_dio = gpio_dio;
   tm1637->pin_dio = pin_dio;
-  tm1637_write(tm1637, _tm1637_all_zero, 4, 0);
+  tm1637_write(tm1637, tm1637_all_zero, TM1637_SYMBOLS, TM1637_STARTPOS);
 }
 
 void DiplayUpdate(int data) {
-    uint8_t buffer[4] = {0};
+    uint8_t buffer[TM1637_SYMBOLS] = {0};
 	int hour, min, sec, dms;
 
 	dms = data % 100;
-	sec = (int)(data / 100);
+	sec = (int)((data - dms) / 100);
 	hour = (int)(sec / 3600);
 	sec = sec % 3600;
 	min = (int)(sec / 60);
 	sec = sec % 60;
 
-    buffer[0] = _tm1637_digits[(int)(sec / 10)];
-    buffer[1] = _tm1637_digits[sec % 10] | _tm1637_dot;
-    buffer[2] = _tm1637_digits[(int)(dms / 10)];
-    buffer[3] = _tm1637_digits[dms % 10];
-	tm1637_write(&D_right, buffer, 4, 0);
+    buffer[0] = tm1637_digits[(int)(sec / 10)];
+    buffer[1] = tm1637_digits[sec % 10] | tm1637_dot;
+    buffer[2] = tm1637_digits[(int)(dms / 10)];
+    buffer[3] = tm1637_digits[dms % 10];
+	tm1637_write(&D_right, buffer, TM1637_SYMBOLS, TM1637_STARTPOS);
 
-    buffer[0] = _tm1637_digits[(int)(hour / 10)];
-    buffer[1] = _tm1637_digits[hour % 10] | _tm1637_dot;
-    buffer[2] = _tm1637_digits[(int)(min / 10)];
-    buffer[3] = _tm1637_digits[min % 10];
-	tm1637_write(&D_left, buffer, 4, 0);
+    buffer[0] = tm1637_digits[(int)(hour / 10)];
+    buffer[1] = tm1637_digits[hour % 10] | tm1637_dot;
+    buffer[2] = tm1637_digits[(int)(min / 10)];
+    buffer[3] = tm1637_digits[min % 10];
+	tm1637_write(&D_left, buffer, TM1637_SYMBOLS, TM1637_STARTPOS);
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
@@ -197,7 +197,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		HAL_TIM_Base_Start_IT(&htim4);
 		if (fRun) {
   		    HAL_TIM_Base_Stop_IT(&htim2);
-  		    __HAL_TIM_CLEAR_IT(&htim2,TIM_IT_UPDATE);
+  		    __HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);
+  		    NVIC_ClearPendingIRQ(TIM2_IRQn);
 			fRun = 0;
   		    fPause = 1;
    		    HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
@@ -292,6 +293,7 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
+
   tm1637_init(&D_left, D1_CLK_GPIO_Port, D1_CLK_Pin, D1_DIO_GPIO_Port, D1_DIO_Pin);
   tm1637_init(&D_right, D2_CLK_GPIO_Port, D2_CLK_Pin, D2_DIO_GPIO_Port, D2_DIO_Pin);
 
@@ -518,6 +520,7 @@ void Error_Handler(void)
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_SET);
+
   while (1)
   {
   }

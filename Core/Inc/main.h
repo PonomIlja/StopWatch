@@ -86,6 +86,11 @@ void Error_Handler(void);
 #define TM1637_COMM1    0x40
 #define TM1637_COMM2    0xC0
 #define TM1637_COMM3    0x80
+#define TM1637_SYMBOLS 	4
+#define TM1637_STARTPOS	0
+#define TM1637_BR_LOW	1
+#define TM1637_BR_MED	2
+#define TM1637_BR_HIGH	5
 
 typedef struct
 {
