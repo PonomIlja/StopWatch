@@ -218,7 +218,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
  void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 	static uint8_t DebounceCounter[2] = {0, 0};
 	if (htim->Instance == TIM2) {		// Stopwatch timer
-		Timer += 1;						// 10x microseconds
+		Timer += 1;						// 10x milliseconds
 		DiplayUpdate(Timer);
 	}
 	if (htim->Instance == TIM4) {		// Debounce timer
