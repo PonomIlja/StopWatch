@@ -187,6 +187,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 			Timer = 0;
 			DiplayUpdate(Timer);
    		    HAL_GPIO_WritePin(LD6_GPIO_Port, LD6_Pin, GPIO_PIN_RESET);
+   		    HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 		}
 
 	}
